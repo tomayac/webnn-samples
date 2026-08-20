@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - master
+      # The default branch of the Cross-Origin Storage deployments, which is
+      # not `master` there. Absent from the canonical repository, so listing it
+      # changes nothing for it.
+      - cross-origin-storage
+  workflow_dispatch:
 
 jobs:
   job:
