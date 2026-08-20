@@ -42,6 +42,44 @@ To get started, follow these steps:
 
 WebNN Samples is currently hosted on GitHub Pages, with model files stored on Amazon S3 and distributed via CloudFront. If you host WebNN Samples on your own GitHub Pages, you may encounter a 'failed to fetch' error due to CORS policy restrictions. To resolve this issue, please update the [weightsOrigin() configuration](https://github.com/webmachinelearning/webnn-samples/blob/master/common/utils.js#L6) as described in the [issue 285](https://github.com/webmachinelearning/webnn-samples/issues/285#issuecomment-2408988830).
 
+### Caching Model Weights In Cross-Origin Storage
+
+Every sample loads its weights through `buildConstantByNpy()` in
+[`common/utils.js`](common/utils.js), which now transparently caches them in
+[Cross-Origin Storage](https://github.com/WICG/cross-origin-storage) (COS) when
+the browser supports it. COS is a hash-addressed store that browsers share
+between origins, so a model downloaded by one site can be reused by another
+instead of being fetched again.
+
+This is a progressive enhancement, and it is invisible when it doesn't apply. A
+browser without COS, a model that isn't in the manifest, a manifest that has
+drifted from the weights being served, an exhausted quota, or a user who
+declines the storage prompt all fall back to exactly the network fetches the
+samples did before.
+
+COS is keyed by the hash of a single file, but a model here is a directory of
+per-tensor `.npy` files — `face_landmark_nhwc/weights/` alone is 20 of them and
+`resnet50v2_nchw/weights/` is 259. So the unit that gets content-addressed is
+the directory, not the tensor: [`common/cos_bundle.js`](common/cos_bundle.js)
+packs a directory into one deterministic bundle, and
+[`common/weight_bundles.js`](common/weight_bundles.js) records the hash of each.
+On a cache miss the browser fetches the individual files as usual, packs them,
+checks the result against that hash, and stores it. Every later load — including
+from a different origin — gets the whole model back in a single read.
+
+The manifest is generated from the `test-data` submodule, and has to be
+regenerated whenever that submodule moves:
+
+```sh
+git submodule update --init test-data
+npm run generate-weight-bundles
+```
+
+Storing a bundle under a hash that other origins share is only safe if the bytes
+really are what the manifest claims, so a mismatch is never stored: the sample
+logs a warning telling you to re-run the command above, and carries on with the
+weights it fetched.
+
 ### WebNN Installation Guides
 
 Please visit [WebNN Installation Guides](https://webnn.io/en/learn/get-started/installation) to get started with WebNN on Intel AI PCs.

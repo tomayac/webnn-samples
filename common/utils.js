@@ -2,6 +2,7 @@
 
 import {numpy} from './libs/numpy.js';
 import {addAlert} from './ui.js';
+import {getCachedWeightBuffer} from './cos_weights.js';
 
 export const isFloat16ArrayAvailable =
   typeof Float16Array !== 'undefined' && Float16Array.from;
@@ -27,8 +28,15 @@ export function sizeOfShape(shape) {
 export async function getBufferFromUrl(url) {
   let arrayBuffer;
   if (globalThis.fetch) {
-    const response = await fetch(url);
-    arrayBuffer = await response.arrayBuffer();
+    // Progressive enhancement: model weights that the browser already holds in
+    // Cross-Origin Storage come back without touching the network. Anything
+    // else — no COS support, an unknown URL, a cache miss that could not be
+    // stored — returns null here and falls through to the plain fetch below.
+    arrayBuffer = await getCachedWeightBuffer(url);
+    if (!arrayBuffer) {
+      const response = await fetch(url);
+      arrayBuffer = await response.arrayBuffer();
+    }
   } else {
     const fs = await import('fs');
     const uint8Array = await fs.promises.readFile(url);
@@ -102,8 +110,7 @@ export async function buildConstantByNpy(builder, url, targetType = 'float32') {
     ['u4', {type: 'uint32', array: Uint32Array}],
     ['u8', {type: 'uint64', array: BigUint64Array}],
   ]);
-  const response = await fetch(url);
-  const buffer = await response.arrayBuffer();
+  const buffer = await getBufferFromUrl(url);
   const npArray = new numpy.Array(new Uint8Array(buffer));
   if (!dataTypeMap.has(npArray.dataType)) {
     throw new Error(`Data type ${npArray.dataType} is not supported.`);
