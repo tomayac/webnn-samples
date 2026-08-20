@@ -40,7 +40,9 @@ To get started, follow these steps:
 
 ### Deploy To Your Github Pages
 
-WebNN Samples is currently hosted on GitHub Pages, with model files stored on Amazon S3 and distributed via CloudFront. If you host WebNN Samples on your own GitHub Pages, you may encounter a 'failed to fetch' error due to CORS policy restrictions. To resolve this issue, please update the [weightsOrigin() configuration](https://github.com/webmachinelearning/webnn-samples/blob/master/common/utils.js#L6) as described in the [issue 285](https://github.com/webmachinelearning/webnn-samples/issues/285#issuecomment-2408988830).
+WebNN Samples is currently hosted on GitHub Pages, with model files stored on Amazon S3 and distributed via CloudFront. That CloudFront distribution only answers requests referred from `webmachinelearning.github.io`, which is what used to make a forked deployment fail to fetch its weights ([issue 285](https://github.com/webmachinelearning/webnn-samples/issues/285#issuecomment-2408988830)).
+
+[`weightsOrigin()`](common/utils.js) now handles this: a deployment on any other `github.io` host reads the weights from `https://webmachinelearning.github.io/webnn-samples/test-data/`, which the canonical deployment publishes with `Access-Control-Allow-Origin: *`. Forking, enabling GitHub Pages, and pushing is enough — there is nothing to configure, and the fork does not publish the ~1 GB `test-data` submodule itself. If you would rather serve the weights yourself, check out the submodule, let the deploy workflow publish it, and change `weightsOrigin()` to return `'..'`.
 
 ### Caching Model Weights In Cross-Origin Storage
 

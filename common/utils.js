@@ -8,11 +8,19 @@ export const isFloat16ArrayAvailable =
   typeof Float16Array !== 'undefined' && Float16Array.from;
 
 export function weightsOrigin() {
-  if (location.hostname.toLowerCase().indexOf('github.io') > -1) {
+  const hostname = location.hostname.toLowerCase();
+  if (hostname === 'webmachinelearning.github.io') {
     return 'https://d3i5xkfad89fac.cloudfront.net';
-  } else {
-    return '..';
   }
+  if (hostname.endsWith('github.io')) {
+    // A fork's GitHub Pages. CloudFront only answers requests referred from
+    // the canonical deployment, which is what makes a forked deployment fail
+    // to fetch its weights (issue #285). Borrow them from the canonical
+    // deployment instead: same bytes, served with `Access-Control-Allow-Origin:
+    // *`, and no need for the fork to publish the `test-data` submodule.
+    return 'https://webmachinelearning.github.io/webnn-samples';
+  }
+  return '..';
 }
 
 export function sizeOfShape(shape) {

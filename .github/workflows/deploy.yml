@@ -9,11 +9,17 @@ jobs:
   job:
     runs-on: ubuntu-latest
     steps:
+    # Only the canonical deployment publishes the `test-data` submodule. Forks
+    # borrow the weights from it (see `weightsOrigin()` in `common/utils.js`),
+    # so checking it out here would push roughly a gigabyte of weights into a
+    # fork's Pages site for nothing.
     - name: Checkout repository and submodules
       uses: actions/checkout@v5
       with:
         persist-credentials: false
-        submodules: recursive
+        submodules: >-
+          ${{ github.repository == 'webmachinelearning/webnn-samples'
+              && 'recursive' || '' }}
 
     - name: Lint
       run: |
