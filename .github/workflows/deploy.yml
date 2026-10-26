@@ -10,7 +10,8 @@ on:
       - cross-origin-storage
   workflow_dispatch:
 
-permissions: contents: write
+permissions:
+  contents: write
 
 jobs:
   job:
