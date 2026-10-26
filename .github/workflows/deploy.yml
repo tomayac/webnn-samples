@@ -10,6 +10,8 @@ on:
       - cross-origin-storage
   workflow_dispatch:
 
+permissions: contents: write
+
 jobs:
   job:
     runs-on: ubuntu-latest
