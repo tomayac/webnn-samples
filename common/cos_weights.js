@@ -43,7 +43,7 @@ const bundles = new Map();
  */
 export function isCrossOriginStorageAvailable() {
   return typeof navigator !== 'undefined' &&
-      typeof navigator.crossOriginStorage?.requestFileHandle === 'function';
+      typeof navigator.crossOriginStorage?.getFileHandle === 'function';
 }
 
 /**
@@ -91,7 +91,7 @@ async function fetchBundleFiles(baseUrl, fileNames) {
 async function readFromCrossOriginStorage(hash) {
   let handle;
   try {
-    handle = await navigator.crossOriginStorage.requestFileHandle(hash);
+    handle = await navigator.crossOriginStorage.getFileHandle(hash);
   } catch (error) {
     // `NotFoundError` simply means the bundle has not been stored yet, and
     // `NotAllowedError` means a Permissions Policy or the user disallowed the
@@ -114,7 +114,7 @@ async function readFromCrossOriginStorage(hash) {
  */
 async function writeToCrossOriginStorage(hash, bundle) {
   try {
-    const handle = await navigator.crossOriginStorage.requestFileHandle(hash, {
+    const handle = await navigator.crossOriginStorage.getFileHandle(hash, {
       create: true,
       // These weights are public sample data, so let any origin reuse them.
       origins: '*',
